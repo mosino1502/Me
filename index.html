@@ -112,8 +112,9 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
         <li>في اختيار حالة الاستخدام (Use case) اختر <b>Manage everything on your Page</b> (إدارة كل شيء على صفحتك). إذا سُئلت عن Business portfolio اختر «لا أريد الربط الآن». أكمل حتى يُنشأ التطبيق.</li>
         <li>افتح حالة الاستخدام ثم <b>Customize</b> (تخصيص)، وتأكد من إضافة هذه الصلاحيات الثلاث بالضغط على Add:
           <br><code>pages_show_list</code> <code>pages_read_engagement</code> <code>pages_read_user_content</code></li>
-        <li>من القائمة الجانبية افتح إعدادات تسجيل الدخول (<b>Facebook Login</b> ← Settings) وفعّل <b>Login with the JavaScript SDK</b>، ثم أضف في <b>Allowed Domains for the JavaScript SDK</b> وفي <b>Valid OAuth Redirect URIs</b>:
-          <br><code id="origin-url"></code></li>
+        <li>من القائمة الجانبية افتح إعدادات تسجيل الدخول (<b>Facebook Login</b> ← Settings) وفعّل <b>Login with the JavaScript SDK</b>، ثم أضف:
+          <br>في <b>Valid OAuth Redirect URIs</b>: <code id="origin-url"></code>
+          <br>في <b>Allowed Domains for the JavaScript SDK</b> (بدون أي شيء بعد الدومين): <code id="origin-root"></code></li>
         <li>افتح <b>App settings ← Basic</b>، وأضف في <b>App Domains</b>: <code id="origin-host"></code> ثم احفظ.</li>
         <li>انسخ <b>App ID</b> من أعلى الصفحة والصقه في الخانة بالأسفل. <b>لا تنسخ App Secret ولا تعطه لأحد</b>، فهذه الأداة لا تحتاجه.</li>
         <li>اترك التطبيق في وضع التطوير (Development). هكذا يعمل لك أنت كمدير للتطبيق بدون مراجعة من فيسبوك، ولا يستطيع غيرك استعماله.</li>
@@ -229,6 +230,7 @@ const done = (n) => { $('st' + n).classList.add('done'); $('st' + n).textContent
 const ORIGIN = location.origin + location.pathname.replace(/[^/]*$/, '');
 $('origin-url').textContent = ORIGIN;
 $('origin-host').textContent = location.hostname;
+$('origin-root').textContent = location.origin + '/';
 
 let pageToken = '', pageId = '', pageName = '', postId = '';
 let comments = [];
