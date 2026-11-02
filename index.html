@@ -199,6 +199,12 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
     <label class="check"><input type="checkbox" id="unique" checked> فرصة واحدة لكل شخص حتى لو كتب أكثر من تعليق مؤهَّل</label>
     <label class="check"><input type="checkbox" id="combine"> جمع الإشارات من كل تعليقات الشخص (مثلاً صديق في كل تعليق)</label>
     <label class="check"><input type="checkbox" id="pagetags"> احتساب الإشارة إلى صفحات (وليس أشخاصاً فقط)</label>
+    <div class="msgbox" id="anon-note" hidden style="background:var(--code);border:1px solid var(--line)">
+      <b>فيسبوك يخفي أسماء أصحاب التعليقات</b> عن التطبيقات التي في وضع التطوير، لكنه يرسل الإشارات بدقة. لذلك:
+      <br>• كل تعليق يظهر باسم «تعليق رقم …»، واضغط عليه لفتحه على فيسبوك ومعرفة صاحبه.
+      <br>• عند السحب سيظهر زر «افتح التعليق الفائز» لترى من كتبه.
+      <br>• مع خيار «فرصة واحدة لكل شخص»: التعليقات التي تشير إلى <b>نفس الأصدقاء بالضبط</b> تُحسب شخصاً واحداً، لأن الغالب أنها مكررة من نفس الشخص.
+    </div>
     <div class="stats" id="stats"></div>
     <div class="tbl"><table>
       <thead><tr><th>#</th><th>الاسم</th><th>الإشارات</th><th>الحالة</th></tr></thead>
@@ -211,6 +217,7 @@ td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
   <div class="stage">
     <h2 style="justify-content:center"><span class="step" style="background:var(--ticket);color:var(--ticket-ink)">5</span>السحب</h2>
     <div class="ticket"><div class="lbl">الفائز</div><div class="name" id="t-name">؟</div><div class="txt" id="t-txt">اجلب التعليقات أولاً</div></div>
+    <a class="btn" id="t-link" href="#" target="_blank" rel="noopener" hidden style="background:var(--fb);color:#fff;text-decoration:none">افتح التعليق الفائز على فيسبوك</a>
     <button class="btn" id="draw" disabled>اختر الفائز</button>
     <p class="why" id="why" hidden></p>
     <div class="winners" id="winners"></div>
@@ -394,7 +401,7 @@ $('fetch').onclick = async () => {
   try {
     while ((first || next) && !stopFetch) {
       const d = first
-        ? await graph(postId + '/comments', { fields: 'id,from{id,name},message,message_tags,created_time', filter, limit: 100, summary: 'true', order: 'chronological' })
+        ? await graph(postId + '/comments', { fields: 'id,from{id,name},message,message_tags,created_time,permalink_url', filter, limit: 100, summary: 'true', order: 'chronological' })
         : await graph(next);
       if (first && d.summary) total = d.summary.total_count || 0;
       first = false;
@@ -426,18 +433,23 @@ function compute() {
   let anon = 0;
   for (const c of comments) {
     const from = c.from || {};
-    const key = from.id || ('anon-' + c.id);
-    if (!from.id) anon++;
-    if (from.id === pageId) continue;
-    if (!people.has(key)) people.set(key, { id: from.id || '', name: from.name || 'مستخدم فيسبوك', comments: [], all: new Map() });
-    const p = people.get(key);
+    if (from.id && from.id === pageId) continue;
     const seen = new Map();
     for (const t of c.message_tags || []) {
       if (!t.id || t.id === from.id || t.id === pageId) continue;
       if (t.type && t.type !== 'user' && !pageTags) continue;
       seen.set(t.id, t.name);
     }
-    p.comments.push({ id: c.id, text: c.message || '', tags: [...seen.values()], n: seen.size });
+    let key = from.id;
+    if (!key) {
+      anon++;
+      /* Facebook hides the author: treat comments tagging the exact same friends as one person */
+      key = unique && seen.size ? 'tags:' + [...seen.keys()].sort().join(',') : 'anon-' + c.id;
+    }
+    if (!people.has(key)) people.set(key, { id: from.id || '', name: from.name || ('تعليق رقم ' + (people.size + 1)), anon: !from.id, comments: [], all: new Map() });
+    const p = people.get(key);
+    const link = c.permalink_url || ('https://www.facebook.com/' + c.id);
+    p.comments.push({ id: c.id, link, text: c.message || '', tags: [...seen.values()], n: seen.size });
     seen.forEach((v, k) => p.all.set(k, v));
   }
   const rows = [], tickets = [];
@@ -469,7 +481,9 @@ function render() {
     const tr = document.createElement('tr');
     const status = r.excluded ? '<span class="pill no">مستبعَد</span>' : r.ok ? '<span class="pill ok">مؤهَّل</span>' : `<span class="pill no">${r.count} من ${min}</span>`;
     tr.innerHTML = `<td class="n">${i + 1}</td><td></td><td><span class="n"></span><div class="tags"></div></td><td>${status}</td>`;
-    tr.children[1].textContent = r.p.name + (r.p.comments.length > 1 ? ` (${r.p.comments.length} تعليقات)` : '');
+    const nm = r.p.name + (r.p.comments.length > 1 ? ` (${r.p.comments.length} تعليقات)` : '');
+    if (r.p.anon) { const a = document.createElement('a'); a.href = r.p.comments[0].link; a.target = '_blank'; a.rel = 'noopener'; a.style.color = 'var(--accent)'; a.textContent = nm; tr.children[1].appendChild(a); }
+    else tr.children[1].textContent = nm;
     tr.children[2].querySelector('.n').textContent = r.count;
     tr.children[2].querySelector('.tags').textContent = r.shown.join('، ');
     tb.appendChild(tr);
@@ -480,15 +494,15 @@ function render() {
   const top = rows.reduce((m, r) => Math.max(m, r.count), 0);
   let why = '';
   if (comments.length && !tickets.length) why = 'لا يوجد أي شخص أشار إلى ' + min + ' أصدقاء. أعلى عدد إشارات وجدته هو ' + top + '.';
-  if (comments.length && anon === comments.length) why = 'فيسبوك لم يرسل أسماء أصحاب التعليقات. سجّل الدخول من جديد ووافق على صلاحية pages_read_user_content.';
   $('why').textContent = why; $('why').hidden = !why;
+  $('anon-note').hidden = !anon;
 }
 ['min', 'nwin', 'exclude', 'unique', 'combine', 'pagetags'].forEach(id => $(id).addEventListener('input', () => { if (comments.length) render(); }));
 
 $('csv').onclick = () => {
   const q = v => '"' + String(v).replace(/"/g, '""') + '"';
-  const lines = ['name,profile_id,comments,best_tag_count,tags,status'];
-  lastRows.forEach(r => lines.push([r.p.name, r.p.id, r.p.comments.length, r.count, r.shown.join(' | '), r.excluded ? 'excluded' : r.ok ? 'eligible' : 'not eligible'].map(q).join(',')));
+  const lines = ['name,profile_id,comment_link,comments,best_tag_count,tags,status'];
+  lastRows.forEach(r => lines.push([r.p.name, r.p.id, r.p.comments[0].link, r.p.comments.length, r.count, r.shown.join(' | '), r.excluded ? 'excluded' : r.ok ? 'eligible' : 'not eligible'].map(q).join(',')));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
   a.download = 'participants.csv'; document.body.appendChild(a); a.click(); a.remove();
@@ -500,9 +514,10 @@ function randInt(n) {
   do crypto.getRandomValues(a); while (a[0] >= max);
   return a[0] % n;
 }
-function resetDraw() { $('winners').innerHTML = ''; $('t-name').textContent = '؟'; $('t-txt').textContent = 'اضغط «اختر الفائز»'; $('draw').textContent = 'اختر الفائز'; }
+function resetDraw() { $('t-link').hidden = true; $('winners').innerHTML = ''; $('t-name').textContent = '؟'; $('t-txt').textContent = 'اضغط «اختر الفائز»'; $('draw').textContent = 'اختر الفائز'; }
 function setWinnerName(el, p) {
   el.textContent = '';
+  if (p.anon) { el.textContent = 'التعليق الفائز: ' + p.name; return; }
   if (p.id) { const a = document.createElement('a'); a.href = 'https://www.facebook.com/' + p.id; a.target = '_blank'; a.rel = 'noopener'; a.textContent = p.name; el.appendChild(a); }
   else el.textContent = p.name;
 }
@@ -512,7 +527,7 @@ $('draw').onclick = async () => {
   render();
   const tickets = lastTickets;
   if (!tickets.length) return;
-  drawing = true; $('draw').disabled = true; $('winners').innerHTML = '';
+  drawing = true; $('draw').disabled = true; $('winners').innerHTML = ''; $('t-link').hidden = true;
   const n = Math.min(Math.max(1, parseInt($('nwin').value) || 1), new Set(tickets.map(t => t.p)).size);
   const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let pool = tickets.slice();
@@ -528,12 +543,14 @@ $('draw').onclick = async () => {
     const w = pool[randInt(pool.length)];
     pool = pool.filter(t => t.p !== w.p);
     setWinnerName($('t-name'), w.p);
+    $('t-link').href = w.c.link; $('t-link').hidden = false;
     $('t-txt').textContent = (w.c.text || '') + (w.c.tags.length ? '  ·  أشار إلى: ' + w.c.tags.join('، ') : '');
     if (n > 1) {
       const d = document.createElement('div'); d.className = 'ticket'; d.style.padding = '10px 22px';
       d.innerHTML = '<div class="lbl"></div><div class="name" style="font-size:20px"></div>';
       d.children[0].textContent = 'الفائز رقم ' + (k + 1);
       setWinnerName(d.children[1], w.p);
+      const la = document.createElement('a'); la.href = w.c.link; la.target = '_blank'; la.rel = 'noopener'; la.textContent = 'افتح التعليق'; la.style.cssText = 'color:inherit;font-size:13px'; d.appendChild(la);
       $('winners').appendChild(d);
       if (k < n - 1) await new Promise(r => setTimeout(r, 900));
     }
