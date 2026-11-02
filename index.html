@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>سحب فائز المسابقة</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Reem+Kufi:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+:root{
+  --bg:#f3f1fb; --panel:#ffffff; --ink:#1d1840; --muted:#5f5a80; --line:#dcd7ee;
+  --accent:#4b2fd6; --accent-ink:#ffffff; --ticket:#ffcf3f; --ticket-ink:#2b2100;
+  --ok:#137a4a; --ok-bg:#e3f5ec; --no:#a3352b; --no-bg:#fbe9e7; --code:#f7f6fc; --fb:#1877f2;
+  --f-display:"Reem Kufi","IBM Plex Sans Arabic",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans Arabic",system-ui,"Segoe UI",Tahoma,sans-serif;
+  --f-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#13112a; --panel:#1c1a3a; --ink:#ece9ff; --muted:#a9a4cc; --line:#34305e;
+  --accent:#8f7bff; --accent-ink:#120c33; --ticket:#ffd457; --ticket-ink:#2b2100;
+  --ok:#5fd59a; --ok-bg:#163327; --no:#ff8f84; --no-bg:#3a1d22; --code:#16142f; color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65}
+[hidden]{display:none!important}
+.wrap{max-width:860px;margin:0 auto;padding-block:28px 60px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:20px}
+h1,h2{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.3}
+h1{font-size:clamp(26px,5vw,36px)}
+h2{font-size:20px;display:flex;align-items:center;gap:10px}
+.step{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font-size:14px;font-family:var(--f-body);font-weight:600;flex:none}
+.step.done{background:var(--ok);color:#fff}
+p{margin:0}
+.lead{color:var(--muted);max-width:62ch}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:14px;min-width:0}
+section.locked{opacity:.5;pointer-events:none}
+ol{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:8px}
+code{font-family:var(--f-mono);font-size:12.5px;background:var(--code);border:1px solid var(--line);border-radius:5px;padding:1px 5px;direction:ltr;unicode-bidi:embed;overflow-wrap:anywhere}
+.note{font-size:13px;color:var(--muted)}
+details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:var(--code)}
+summary{cursor:pointer;font-weight:600}
+details[open] summary{margin-bottom:10px}
+button{font-family:inherit}
+.btn{border:0;border-radius:10px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.fb{background:var(--fb);color:#fff}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--ticket);outline-offset:2px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.field{display:flex;flex-direction:column;gap:4px;font-size:14px;min-width:0}
+input[type=text],input[type=number],select{border:1px solid var(--line);border-radius:8px;padding:9px 11px;background:var(--code);color:var(--ink);font:inherit;max-width:100%}
+input.ltr{direction:ltr;text-align:left;font-family:var(--f-mono);font-size:13px}
+.grow{flex:1 1 240px}
+.rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.check{display:flex;gap:8px;align-items:flex-start;font-size:14px}
+.check input{margin-top:5px}
+.list{display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto}
+.item{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px;background:transparent;color:var(--ink);text-align:start;cursor:pointer;font:inherit;width:100%}
+.item:hover,.item[aria-pressed="true"]{border-color:var(--accent)}
+.item[aria-pressed="true"]{background:var(--code)}
+.item img{width:56px;height:56px;object-fit:cover;border-radius:8px;flex:none;background:var(--line)}
+.item .meta{min-width:0;display:flex;flex-direction:column}
+.item .msg{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.item .sub{font-size:12px;color:var(--muted)}
+.chip{font-size:11px;font-weight:600;padding:1px 8px;border-radius:999px;background:var(--line);color:var(--ink);margin-inline-start:6px}
+.bar{height:10px;background:var(--line);border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+.stats{display:flex;gap:22px;flex-wrap:wrap;font-variant-numeric:tabular-nums}
+.stat b{font-family:var(--f-display);font-size:26px;display:block;line-height:1.1}
+.stat span{font-size:12px;color:var(--muted)}
+.tbl{overflow-x:auto;border:1px solid var(--line);border-radius:10px;max-height:420px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px 10px;text-align:start;border-bottom:1px solid var(--line);vertical-align:top}
+th{position:sticky;top:0;background:var(--panel);font-weight:600;font-size:12px;color:var(--muted)}
+td.n{font-variant-numeric:tabular-nums;white-space:nowrap}
+.pill{display:inline-block;padding:1px 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)}
+.pill.no{background:var(--no-bg);color:var(--no)}
+.tags{color:var(--muted);font-size:12px}
+.msgbox{padding:10px 14px;border-radius:10px;font-size:14px}
+.msgbox.err{background:var(--no-bg);color:var(--no)}
+.msgbox.ok{background:var(--ok-bg);color:var(--ok)}
+.stage{background:var(--ink);color:var(--bg);border-radius:16px;padding:26px 20px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.ticket{background:var(--ticket);color:var(--ticket-ink);border-radius:12px;padding:18px 26px;min-width:min(100%,320px);max-width:100%;
+  -webkit-mask:radial-gradient(circle 12px at 0 50%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 12px at 100% 50%,transparent 98%,#000) right/51% 100% no-repeat;
+          mask:radial-gradient(circle 12px at 0 50%,transparent 98%,#000) left/51% 100% no-repeat,radial-gradient(circle 12px at 100% 50%,transparent 98%,#000) right/51% 100% no-repeat}
+.ticket .lbl{font-size:12px;letter-spacing:.04em;opacity:.75}
+.ticket .name{font-family:var(--f-display);font-size:clamp(22px,5vw,32px);font-weight:700;overflow-wrap:anywhere}
+.ticket .name a{color:inherit}
+.ticket .txt{font-size:13px;opacity:.85;overflow-wrap:anywhere}
+.stage .btn{background:var(--ticket);color:var(--ticket-ink);font-size:17px;padding:12px 30px}
+.winners{display:flex;flex-direction:column;gap:8px;width:100%;max-width:520px}
+.why{background:var(--no-bg);color:var(--no);padding:10px 14px;border-radius:10px;font-size:14px;max-width:52ch}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header style="display:flex;flex-direction:column;gap:8px">
+    <h1>سحب فائز المسابقة</h1>
+    <p class="lead">يتصل بصفحتك على فيسبوك بالطريقة الرسمية، يجلب كل تعليقات المنشور مع الأصدقاء المُشار إليهم بدقة، ثم يختار فائزاً عشوائياً.</p>
+    <p class="note">بياناتك لا تخرج من متصفحك: لا يوجد خادم، والتعليقات تنتقل من فيسبوك إلى هذه الصفحة مباشرة ولا تُحفظ في أي مكان.</p>
+  </header>
+
+  <!-- 1. App ID -->
+  <section id="s1">
+    <h2><span class="step" id="st1">1</span>رقم تطبيق فيسبوك (App ID)</h2>
+    <details id="guide">
+      <summary>كيف أنشئ تطبيق فيسبوك وأحصل على App ID؟ (مرة واحدة فقط، حوالي 10 دقائق)</summary>
+      <ol>
+        <li>افتح <a href="https://developers.facebook.com/apps" target="_blank" rel="noopener">developers.facebook.com/apps</a> وسجّل الدخول بحساب فيسبوك المالك للصفحة. إذا طُلب منك التسجيل كمطوّر فوافق (مجاني).</li>
+        <li>اضغط <b>Create App</b> (إنشاء تطبيق). اكتب أي اسم، مثلاً «سحب مسابقتي».</li>
+        <li>في اختيار حالة الاستخدام (Use case) اختر <b>Manage everything on your Page</b> (إدارة كل شيء على صفحتك). إذا سُئلت عن Business portfolio اختر «لا أريد الربط الآن». أكمل حتى يُنشأ التطبيق.</li>
+        <li>افتح حالة الاستخدام ثم <b>Customize</b> (تخصيص)، وتأكد من إضافة هذه الصلاحيات الثلاث بالضغط على Add:
+          <br><code>pages_show_list</code> <code>pages_read_engagement</code> <code>pages_read_user_content</code></li>
+        <li>من القائمة الجانبية افتح إعدادات تسجيل الدخول (<b>Facebook Login</b> ← Settings) وفعّل <b>Login with the JavaScript SDK</b>، ثم أضف في <b>Allowed Domains for the JavaScript SDK</b> وفي <b>Valid OAuth Redirect URIs</b>:
+          <br><code id="origin-url"></code></li>
+        <li>افتح <b>App settings ← Basic</b>، وأضف في <b>App Domains</b>: <code id="origin-host"></code> ثم احفظ.</li>
+        <li>انسخ <b>App ID</b> من أعلى الصفحة والصقه في الخانة بالأسفل. <b>لا تنسخ App Secret ولا تعطه لأحد</b>، فهذه الأداة لا تحتاجه.</li>
+        <li>اترك التطبيق في وضع التطوير (Development). هكذا يعمل لك أنت كمدير للتطبيق بدون مراجعة من فيسبوك، ولا يستطيع غيرك استعماله.</li>
+      </ol>
+      <p class="note" style="margin-top:8px">أسماء الأزرار في لوحة فيسبوك تتغير أحياناً. إذا لم تجد زراً، صوّر الشاشة واطلب المساعدة.</p>
+    </details>
+    <div class="row">
+      <label class="field grow">App ID
+        <input type="text" id="appid" class="ltr" inputmode="numeric" placeholder="مثال: 1234567890123456" autocomplete="off">
+      </label>
+      <button class="btn" id="save-app" style="align-self:flex-end">حفظ ومتابعة</button>
+    </div>
+    <details>
+      <summary>إعدادات متقدمة (اختياري)</summary>
+      <div class="rules">
+        <label class="field">Configuration ID (فقط إذا كان تطبيقك يستعمل Facebook Login for Business)
+          <input type="text" id="configid" class="ltr" autocomplete="off">
+        </label>
+        <label class="field">إصدار Graph API
+          <input type="text" id="apiver" class="ltr" value="v23.0" autocomplete="off">
+        </label>
+      </div>
+    </details>
+    <div class="msgbox err" id="e1" hidden></div>
+  </section>
+
+  <!-- 2. Login + page -->
+  <section id="s2" class="locked">
+    <h2><span class="step" id="st2">2</span>تسجيل الدخول واختيار الصفحة</h2>
+    <p class="note">ستفتح نافذة فيسبوك الرسمية. الأداة لا ترى كلمة السر، وتطلب فقط صلاحية قراءة منشورات صفحتك وتعليقاتها.</p>
+    <div class="row">
+      <button class="btn fb" id="login">تسجيل الدخول بفيسبوك</button>
+      <button class="btn ghost" id="logout" hidden>تسجيل الخروج</button>
+      <span class="note" id="who"></span>
+    </div>
+    <label class="field" id="page-wrap" hidden>الصفحة
+      <select id="page"></select>
+    </label>
+    <div class="msgbox err" id="e2" hidden></div>
+  </section>
+
+  <!-- 3. Post -->
+  <section id="s3" class="locked">
+    <h2><span class="step" id="st3">3</span>اختيار المنشور</h2>
+    <div class="row">
+      <button class="btn ghost" id="load-reels">عرض الريلز</button>
+      <button class="btn ghost" id="load-posts">عرض المنشورات</button>
+    </div>
+    <div class="list" id="items"></div>
+    <div class="row">
+      <label class="field grow">أو الصق رابط المنشور أو رقمه
+        <input type="text" id="post" class="ltr" placeholder="https://www.facebook.com/..." autocomplete="off">
+      </label>
+    </div>
+    <p class="note">رابط مثل <code>facebook.com/share/r/…</code> لا يحتوي على رقم المنشور. الأسهل أن تختاره من القائمة أعلاه.</p>
+    <label class="check"><input type="checkbox" id="replies"> احتساب الردود على التعليقات أيضاً (وليس التعليقات الرئيسية فقط)</label>
+    <div class="row">
+      <button class="btn" id="fetch">جلب كل التعليقات</button>
+      <button class="btn ghost" id="stop" hidden>إيقاف</button>
+    </div>
+    <div id="prog" hidden style="display:flex;flex-direction:column;gap:6px">
+      <div class="bar"><i id="bar"></i></div>
+      <p class="note" id="prog-t"></p>
+    </div>
+    <div class="msgbox err" id="e3" hidden></div>
+  </section>
+
+  <!-- 4. Rules + table -->
+  <section id="s4" class="locked">
+    <h2><span class="step" id="st4">4</span>الشروط والمشاركون</h2>
+    <div class="rules">
+      <label class="field">أقل عدد من الأصدقاء المُشار إليهم
+        <input type="number" id="min" min="1" max="50" value="3">
+      </label>
+      <label class="field">عدد الفائزين
+        <input type="number" id="nwin" min="1" max="50" value="1">
+      </label>
+      <label class="field">استبعاد أسماء، افصل بينها بفاصلة
+        <input type="text" id="exclude" placeholder="اختياري">
+      </label>
+    </div>
+    <label class="check"><input type="checkbox" id="unique" checked> فرصة واحدة لكل شخص حتى لو كتب أكثر من تعليق مؤهَّل</label>
+    <label class="check"><input type="checkbox" id="combine"> جمع الإشارات من كل تعليقات الشخص (مثلاً صديق في كل تعليق)</label>
+    <label class="check"><input type="checkbox" id="pagetags"> احتساب الإشارة إلى صفحات (وليس أشخاصاً فقط)</label>
+    <div class="stats" id="stats"></div>
+    <div class="tbl"><table>
+      <thead><tr><th>#</th><th>الاسم</th><th>الإشارات</th><th>الحالة</th></tr></thead>
+      <tbody id="rows"><tr><td colspan="4" class="note">ستظهر القائمة هنا بعد جلب التعليقات.</td></tr></tbody>
+    </table></div>
+    <div class="row"><button class="btn ghost" id="csv">تنزيل القائمة كملف CSV</button></div>
+  </section>
+
+  <!-- 5. Draw -->
+  <div class="stage">
+    <h2 style="justify-content:center"><span class="step" style="background:var(--ticket);color:var(--ticket-ink)">5</span>السحب</h2>
+    <div class="ticket"><div class="lbl">الفائز</div><div class="name" id="t-name">؟</div><div class="txt" id="t-txt">اجلب التعليقات أولاً</div></div>
+    <button class="btn" id="draw" disabled>اختر الفائز</button>
+    <p class="why" id="why" hidden></p>
+    <div class="winners" id="winners"></div>
+    <p style="font-size:12px;opacity:.7;max-width:52ch">الاختيار عشوائي تماماً باستخدام مولّد الأرقام العشوائية الآمن في المتصفح، ولكل مؤهَّل فرصة متساوية.</p>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const store = {
+  get(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+};
+const show = (id, msg) => { $(id).textContent = msg || ''; $(id).hidden = !msg; };
+const unlock = (n) => { $('s' + n).classList.remove('locked'); };
+const done = (n) => { $('st' + n).classList.add('done'); $('st' + n).textContent = '✓'; };
+const ORIGIN = location.origin + location.pathname.replace(/[^/]*$/, '');
+$('origin-url').textContent = ORIGIN;
+$('origin-host').textContent = location.hostname;
+
+let pageToken = '', pageId = '', pageName = '', postId = '';
+let comments = [];
+let stopFetch = false;
+const ver = () => ($('apiver').value.trim() || 'v23.0');
+
+/* ---------- Graph API ---------- */
+async function graph(path, params = {}) {
+  const url = path.startsWith('http') ? new URL(path) : new URL('https://graph.facebook.com/' + ver() + '/' + path);
+  for (const [k, v] of Object.entries(params)) url.searchParams.set(k, v);
+  if (!url.searchParams.has('access_token')) url.searchParams.set('access_token', pageToken);
+  let lastErr;
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data.error) {
+        const c = data.error.code;
+        if ((c === 4 || c === 17 || c === 32 || c === 613 || c === 1 || c === 2) && attempt < 3) { await new Promise(r => setTimeout(r, 4000 * (attempt + 1))); continue; }
+        throw Object.assign(new Error(data.error.message), { fb: data.error });
+      }
+      return data;
+    } catch (e) {
+      lastErr = e;
+      if (e.fb) throw e;
+      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
+}
+function explain(e) {
+  const c = e.fb && e.fb.code;
+  if (c === 190) return 'انتهت صلاحية الدخول. اضغط «تسجيل الدخول بفيسبوك» مرة أخرى.';
+  if (c === 10 || c === 200 || (c >= 200 && c < 300)) return 'فيسبوك رفض الصلاحية. سجّل الدخول من جديد ووافق على كل الصلاحيات، وتأكد أنك أضفت الصلاحيات الثلاث في إعدادات التطبيق. (' + e.message + ')';
+  if (c === 100) return 'لم أجد هذا المنشور، أو أن الرقم غير صحيح. اختر المنشور من القائمة بدل لصق الرابط. (' + e.message + ')';
+  return 'حدث خطأ من فيسبوك: ' + e.message;
+}
+
+/* ---------- Step 1: SDK ---------- */
+function loadSDK(appId) {
+  return new Promise((resolve, reject) => {
+    window.fbAsyncInit = () => {
+      try { FB.init({ appId, cookie: false, xfbml: false, version: ver() }); resolve(); } catch (e) { reject(e); }
+    };
+    const s = document.createElement('script');
+    s.src = 'https://connect.facebook.net/ar_AR/sdk.js';
+    s.async = true; s.crossOrigin = 'anonymous';
+    s.onerror = () => reject(new Error('sdk'));
+    document.head.appendChild(s);
+  });
+}
+let sdkReady = false;
+$('save-app').onclick = async () => {
+  const id = $('appid').value.trim();
+  show('e1');
+  if (!/^\d{6,20}$/.test(id)) { show('e1', 'رقم App ID يتكوّن من أرقام فقط (عادة 15 أو 16 رقماً). انسخه من لوحة تطبيقك.'); return; }
+  store.set('appid', id); store.set('configid', $('configid').value.trim()); store.set('apiver', $('apiver').value.trim());
+  if (sdkReady) { location.reload(); return; }
+  try {
+    await loadSDK(id);
+    sdkReady = true; done(1); unlock(2); $('guide').open = false;
+  } catch (e) {
+    show('e1', 'تعذّر تحميل أداة فيسبوك. إذا كان لديك مانع إعلانات أو حماية من التتبع فأوقفه لهذه الصفحة ثم أعد المحاولة.');
+  }
+};
+
+/* ---------- Step 2: login ---------- */
+const SCOPE = 'pages_show_list,pages_read_engagement,pages_read_user_content';
+$('login').onclick = () => {
+  show('e2');
+  const cfg = $('configid').value.trim();
+  const opts = cfg ? { config_id: cfg } : { scope: SCOPE, auth_type: 'rerequest' };
+  FB.login(r => {
+    if (!r.authResponse) { show('e2', 'لم يكتمل تسجيل الدخول. إذا ظهرت لك رسالة خطأ من فيسبوك، تأكد من إعدادات الدومين في الخطوة 1.'); return; }
+    afterLogin(r.authResponse.accessToken);
+  }, opts);
+};
+$('logout').onclick = () => { try { FB.logout(() => location.reload()); } catch (e) { location.reload(); } };
+let pages = [];
+async function afterLogin(userToken) {
+  try {
+    const me = await graph('me', { fields: 'name', access_token: userToken });
+    $('who').textContent = 'مسجّل باسم: ' + me.name;
+    $('login').hidden = true; $('logout').hidden = false;
+    pages = [];
+    let next = null, first = true;
+    while (first || next) {
+      const d = first ? await graph('me/accounts', { fields: 'id,name,access_token,picture{url}', limit: 100, access_token: userToken }) : await graph(next);
+      pages.push(...(d.data || [])); next = d.paging && d.paging.next; first = false;
+    }
+    if (!pages.length) { show('e2', 'لم أجد أي صفحة تديرها. عند تسجيل الدخول اضغط «تعديل الإعدادات» واختر صفحتك، ثم أعد المحاولة.'); $('login').hidden = false; return; }
+    $('page').innerHTML = '';
+    pages.forEach((p, i) => { const o = document.createElement('option'); o.value = i; o.textContent = p.name; $('page').appendChild(o); });
+    $('page-wrap').hidden = false;
+    selectPage(0);
+  } catch (e) { show('e2', explain(e)); }
+}
+function selectPage(i) {
+  const p = pages[i]; pageToken = p.access_token; pageId = p.id; pageName = p.name;
+  $('exclude').placeholder = 'صفحتك «' + pageName + '» مستبعدة تلقائياً';
+  done(2); unlock(3);
+  $('items').innerHTML = '';
+  loadList('reels');
+}
+$('page').onchange = e => selectPage(+e.target.value);
+
+/* ---------- Step 3: choose post ---------- */
+function fmtDate(s) { try { return new Date(s).toLocaleDateString('ar', { year: 'numeric', month: 'long', day: 'numeric' }); } catch (e) { return s; } }
+async function loadList(kind) {
+  show('e3'); $('items').innerHTML = '<p class="note">جاري التحميل…</p>';
+  try {
+    let d;
+    if (kind === 'reels') d = await graph(pageId + '/video_reels', { fields: 'id,description,created_time,picture,permalink_url', limit: 25 });
+    else d = await graph(pageId + '/posts', { fields: 'id,message,created_time,full_picture,permalink_url,comments.summary(true).limit(0)', limit: 25 });
+    const list = d.data || [];
+    $('items').innerHTML = '';
+    if (!list.length) { $('items').innerHTML = '<p class="note">لا توجد عناصر هنا. جرّب الزر الآخر.</p>'; return; }
+    list.forEach(it => {
+      const b = document.createElement('button'); b.className = 'item'; b.type = 'button'; b.setAttribute('aria-pressed', 'false');
+      const img = it.picture || it.full_picture;
+      b.innerHTML = (img ? '<img alt="">' : '<img alt="" style="visibility:hidden">') + '<div class="meta"><span class="msg"></span><span class="sub"></span></div>';
+      if (img) b.querySelector('img').src = img;
+      b.querySelector('.msg').textContent = (it.description || it.message || '(بدون نص)').split('\n')[0];
+      const cnt = it.comments && it.comments.summary ? ' · ' + it.comments.summary.total_count + ' تعليق' : '';
+      b.querySelector('.sub').textContent = (kind === 'reels' ? 'ريل · ' : 'منشور · ') + fmtDate(it.created_time) + cnt;
+      b.onclick = () => {
+        $('items').querySelectorAll('.item').forEach(x => x.setAttribute('aria-pressed', 'false'));
+        b.setAttribute('aria-pressed', 'true');
+        $('post').value = it.id;
+      };
+      $('items').appendChild(b);
+    });
+  } catch (e) { $('items').innerHTML = ''; show('e3', explain(e)); }
+}
+$('load-reels').onclick = () => loadList('reels');
+$('load-posts').onclick = () => loadList('posts');
+
+function parsePost(v) {
+  v = v.trim();
+  if (/^\d+(_\d+)?$/.test(v)) return v;
+  try {
+    const u = new URL(v);
+    const sf = u.searchParams.get('story_fbid'), id = u.searchParams.get('id');
+    if (sf && id) return id + '_' + sf;
+    const m = u.pathname.match(/\/(?:reel|videos|posts|watch)\/(\d+)/) || u.pathname.match(/\/(\d{8,})\/?$/);
+    if (m) return m[1];
+    const vid = u.searchParams.get('v'); if (vid) return vid;
+  } catch (e) {}
+  return '';
+}
+
+$('stop').onclick = () => { stopFetch = true; };
+$('fetch').onclick = async () => {
+  show('e3');
+  postId = parsePost($('post').value);
+  if (!postId) { show('e3', 'لم أستطع معرفة رقم المنشور من هذا الرابط. اختر المنشور من القائمة أعلاه.'); return; }
+  stopFetch = false; comments = [];
+  $('fetch').disabled = true; $('stop').hidden = false; $('prog').hidden = false;
+  const filter = $('replies').checked ? 'stream' : 'toplevel';
+  let total = 0, next = null, first = true;
+  try {
+    while ((first || next) && !stopFetch) {
+      const d = first
+        ? await graph(postId + '/comments', { fields: 'id,from{id,name},message,message_tags,created_time', filter, limit: 100, summary: 'true', order: 'chronological' })
+        : await graph(next);
+      if (first && d.summary) total = d.summary.total_count || 0;
+      first = false;
+      for (const c of d.data || []) comments.push(c);
+      next = d.paging && d.paging.next;
+      const pct = total ? Math.min(100, comments.length / total * 100) : 0;
+      $('bar').style.width = (total ? pct : 50) + '%';
+      $('prog-t').textContent = 'تم جلب ' + comments.length.toLocaleString('ar') + (total ? ' من ' + total.toLocaleString('ar') : '') + ' تعليق…';
+    }
+    $('bar').style.width = '100%';
+    $('prog-t').textContent = (stopFetch ? 'أُوقف الجلب. ' : 'انتهى الجلب. ') + 'تم جلب ' + comments.length.toLocaleString('ar') + ' تعليق' + (total ? ' (فيسبوك يذكر ' + total.toLocaleString('ar') + ' إجمالاً، والفرق عادة تعليقات محذوفة أو مخفية أو ردود)' : '') + '.';
+    if (comments.length) { done(3); unlock(4); }
+    resetDraw(); render();
+  } catch (e) {
+    show('e3', explain(e) + (comments.length ? ' تم جلب ' + comments.length + ' تعليق قبل الخطأ، ويمكنك المتابعة بها.' : ''));
+    if (comments.length) { unlock(4); resetDraw(); render(); }
+  } finally {
+    $('fetch').disabled = false; $('stop').hidden = true;
+  }
+};
+
+/* ---------- Step 4: rules ---------- */
+const norm = s => String(s || '').replace(/\s+/g, ' ').trim().toLowerCase();
+function compute() {
+  const min = Math.max(1, parseInt($('min').value) || 3);
+  const excl = $('exclude').value.split(/[،,]/).map(norm).filter(Boolean);
+  const unique = $('unique').checked, combine = $('combine').checked, pageTags = $('pagetags').checked;
+  const people = new Map();
+  let anon = 0;
+  for (const c of comments) {
+    const from = c.from || {};
+    const key = from.id || ('anon-' + c.id);
+    if (!from.id) anon++;
+    if (from.id === pageId) continue;
+    if (!people.has(key)) people.set(key, { id: from.id || '', name: from.name || 'مستخدم فيسبوك', comments: [], all: new Map() });
+    const p = people.get(key);
+    const seen = new Map();
+    for (const t of c.message_tags || []) {
+      if (!t.id || t.id === from.id || t.id === pageId) continue;
+      if (t.type && t.type !== 'user' && !pageTags) continue;
+      seen.set(t.id, t.name);
+    }
+    p.comments.push({ id: c.id, text: c.message || '', tags: [...seen.values()], n: seen.size });
+    seen.forEach((v, k) => p.all.set(k, v));
+  }
+  const rows = [], tickets = [];
+  for (const p of people.values()) {
+    const excluded = excl.includes(norm(p.name));
+    const best = p.comments.reduce((a, c) => c.n > a.n ? c : a, p.comments[0]);
+    const count = combine ? p.all.size : best.n;
+    const qual = combine ? (p.all.size >= min ? [best] : []) : p.comments.filter(c => c.n >= min);
+    const ok = !excluded && qual.length > 0;
+    rows.push({ p, count, shown: combine ? [...p.all.values()] : best.tags, ok, excluded });
+    if (ok) { if (unique) tickets.push({ p, c: qual[0] }); else qual.forEach(c => tickets.push({ p, c })); }
+  }
+  rows.sort((a, b) => (b.ok - a.ok) || (b.count - a.count));
+  return { rows, tickets, min, anon };
+}
+let lastTickets = [], lastRows = [];
+function render() {
+  const { rows, tickets, min, anon } = compute();
+  lastTickets = tickets; lastRows = rows;
+  const ok = rows.filter(r => r.ok).length;
+  const n = x => x.toLocaleString('ar');
+  $('stats').innerHTML = `
+    <div class="stat"><b>${n(comments.length)}</b><span>تعليق</span></div>
+    <div class="stat"><b>${n(rows.length)}</b><span>شخص</span></div>
+    <div class="stat"><b style="color:var(--ok)">${n(ok)}</b><span>مؤهَّل</span></div>
+    <div class="stat"><b>${n(tickets.length)}</b><span>فرصة في السحب</span></div>`;
+  const tb = $('rows'); tb.innerHTML = '';
+  rows.slice(0, 500).forEach((r, i) => {
+    const tr = document.createElement('tr');
+    const status = r.excluded ? '<span class="pill no">مستبعَد</span>' : r.ok ? '<span class="pill ok">مؤهَّل</span>' : `<span class="pill no">${r.count} من ${min}</span>`;
+    tr.innerHTML = `<td class="n">${i + 1}</td><td></td><td><span class="n"></span><div class="tags"></div></td><td>${status}</td>`;
+    tr.children[1].textContent = r.p.name + (r.p.comments.length > 1 ? ` (${r.p.comments.length} تعليقات)` : '');
+    tr.children[2].querySelector('.n').textContent = r.count;
+    tr.children[2].querySelector('.tags').textContent = r.shown.join('، ');
+    tb.appendChild(tr);
+  });
+  if (rows.length > 500) { const tr = document.createElement('tr'); tr.innerHTML = '<td colspan="4" class="note"></td>'; tr.firstChild.textContent = 'تُعرض أول 500 فقط من ' + n(rows.length) + ' شخص، لكن السحب يشمل الجميع. نزّل ملف CSV لرؤية القائمة كاملة.'; tb.appendChild(tr); }
+  if (!rows.length) tb.innerHTML = '<tr><td colspan="4" class="note">لا توجد تعليقات.</td></tr>';
+  $('draw').disabled = !tickets.length || drawing;
+  const top = rows.reduce((m, r) => Math.max(m, r.count), 0);
+  let why = '';
+  if (comments.length && !tickets.length) why = 'لا يوجد أي شخص أشار إلى ' + min + ' أصدقاء. أعلى عدد إشارات وجدته هو ' + top + '.';
+  if (comments.length && anon === comments.length) why = 'فيسبوك لم يرسل أسماء أصحاب التعليقات. سجّل الدخول من جديد ووافق على صلاحية pages_read_user_content.';
+  $('why').textContent = why; $('why').hidden = !why;
+}
+['min', 'nwin', 'exclude', 'unique', 'combine', 'pagetags'].forEach(id => $(id).addEventListener('input', () => { if (comments.length) render(); }));
+
+$('csv').onclick = () => {
+  const q = v => '"' + String(v).replace(/"/g, '""') + '"';
+  const lines = ['name,profile_id,comments,best_tag_count,tags,status'];
+  lastRows.forEach(r => lines.push([r.p.name, r.p.id, r.p.comments.length, r.count, r.shown.join(' | '), r.excluded ? 'excluded' : r.ok ? 'eligible' : 'not eligible'].map(q).join(',')));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'participants.csv'; document.body.appendChild(a); a.click(); a.remove();
+};
+
+/* ---------- Step 5: draw ---------- */
+function randInt(n) {
+  const max = Math.floor(0x100000000 / n) * n, a = new Uint32Array(1);
+  do crypto.getRandomValues(a); while (a[0] >= max);
+  return a[0] % n;
+}
+function resetDraw() { $('winners').innerHTML = ''; $('t-name').textContent = '؟'; $('t-txt').textContent = 'اضغط «اختر الفائز»'; $('draw').textContent = 'اختر الفائز'; }
+function setWinnerName(el, p) {
+  el.textContent = '';
+  if (p.id) { const a = document.createElement('a'); a.href = 'https://www.facebook.com/' + p.id; a.target = '_blank'; a.rel = 'noopener'; a.textContent = p.name; el.appendChild(a); }
+  else el.textContent = p.name;
+}
+let drawing = false;
+$('draw').onclick = async () => {
+  if (drawing) return;
+  render();
+  const tickets = lastTickets;
+  if (!tickets.length) return;
+  drawing = true; $('draw').disabled = true; $('winners').innerHTML = '';
+  const n = Math.min(Math.max(1, parseInt($('nwin').value) || 1), new Set(tickets.map(t => t.p)).size);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let pool = tickets.slice();
+  for (let k = 0; k < n; k++) {
+    if (!reduce) {
+      const t0 = performance.now();
+      while (performance.now() - t0 < 2400) {
+        $('t-name').textContent = pool[randInt(pool.length)].p.name; $('t-txt').textContent = '…';
+        const pr = (performance.now() - t0) / 2400;
+        await new Promise(r => setTimeout(r, 40 + pr * pr * 220));
+      }
+    }
+    const w = pool[randInt(pool.length)];
+    pool = pool.filter(t => t.p !== w.p);
+    setWinnerName($('t-name'), w.p);
+    $('t-txt').textContent = (w.c.text || '') + (w.c.tags.length ? '  ·  أشار إلى: ' + w.c.tags.join('، ') : '');
+    if (n > 1) {
+      const d = document.createElement('div'); d.className = 'ticket'; d.style.padding = '10px 22px';
+      d.innerHTML = '<div class="lbl"></div><div class="name" style="font-size:20px"></div>';
+      d.children[0].textContent = 'الفائز رقم ' + (k + 1);
+      setWinnerName(d.children[1], w.p);
+      $('winners').appendChild(d);
+      if (k < n - 1) await new Promise(r => setTimeout(r, 900));
+    }
+  }
+  drawing = false; $('draw').disabled = false; $('draw').textContent = 'إعادة السحب';
+};
+
+/* ---------- boot ---------- */
+$('appid').value = store.get('appid');
+$('configid').value = store.get('configid');
+if (store.get('apiver')) $('apiver').value = store.get('apiver');
+if ($('appid').value) $('save-app').click(); else $('guide').open = true;
+</script>
+</body>
+</html>
