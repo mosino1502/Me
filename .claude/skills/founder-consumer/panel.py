@@ -88,10 +88,11 @@ def deal(customer, n=100, seed=7):
         behs += [b] * k
     rng.shuffle(segs)
     rng.shuffle(behs)
-    names = FIRST_NAMES[:]
+    names = list(customer.get("names") or FIRST_NAMES)
+    base_names = names[:]
     rng.shuffle(names)
     while len(names) < n:
-        names += ["%s %d" % (x, len(names) // len(FIRST_NAMES) + 1) for x in FIRST_NAMES]
+        names += ["%s %d" % (x, len(names) // len(base_names) + 1) for x in base_names]
     objections = customer["objections"]
     habits = customer.get("habits") or []
     cards = []
@@ -161,7 +162,7 @@ def load_state(d):
 BRIEF = """You are a simulated buyer on a consumer panel. A founder wants to know, before spending any money, whether real people like you would buy. Your answer is only useful if it is honest: most people do not buy most things, and a polite yes is worse than a clear no.
 
 === WHO YOU ARE ===
-{name}, {age}. {segment}. You earn about ${income:,} a year.
+{name}, {age}. {segment}. You earn about {income:,} {currency} a year.
 How you buy: {behaviour}. {behaviour_how}
 {habit_line}The first thing that comes to mind when you hear an offer like this: "{objection}"
 You are one of these people: {target}.
@@ -200,7 +201,8 @@ def write_briefs(d, wave=WAVE):
             continue
         brief = BRIEF.format(pitch=state["pitch"], target=target, out=os.path.abspath(out),
                              habit_line=("Your day: %s.\n" % c["habit"]) if c.get("habit") else "",
-                             reasons=" / ".join(REASONS), **c)
+                             reasons=" / ".join(REASONS),
+                             currency=state["customer"].get("currency", "$"), **c)
         bp = _path(d, "briefs", c["id"] + ".md")
         with open(bp, "w", encoding="utf-8") as fh:
             fh.write(brief)
